@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
+import { useState } from 'react'
 import { authApi } from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import { Loader2 } from 'lucide-react'
@@ -7,7 +8,10 @@ import toast from 'react-hot-toast'
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, setAuth } = useAuthStore()
+  const [demoEmail, setDemoEmail] = useState('')
+  const [demoName, setDemoName] = useState('')
+  const [showDemoForm, setShowDemoForm] = useState(false)
 
   const { mutate: handleLogin, isLoading } = useMutation({
     mutationFn: authApi.getLoginUrl,
@@ -16,6 +20,26 @@ export default function LoginPage() {
     },
     onError: () => {
       toast.error('Failed to initiate login')
+    },
+  })
+
+  const { mutate: handleDemoLogin, isLoading: isDemoLoading } = useMutation({
+    mutationFn: async (data: { email: string; name: string }) => {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/demo-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      if (!response.ok) throw new Error('Demo login failed')
+      return response.json()
+    },
+    onSuccess: (data) => {
+      setAuth(data.access_token, data.user)
+      toast.success('Welcome to Task Intelligence!')
+      navigate('/dashboard')
+    },
+    onError: () => {
+      toast.error('Demo login failed')
     },
   })
 
@@ -83,33 +107,109 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Login Button */}
-          <button
-            onClick={() => handleLogin()}
-            disabled={isLoading}
-            className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white border-2 border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Connecting...
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" viewBox="0 0 21 21" fill="none">
-                  <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
-                  <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
-                  <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
-                  <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
-                </svg>
-                Sign in with Microsoft
-              </>
-            )}
-          </button>
+          {/* Login Buttons */}
+          {!showDemoForm ? (
+            <>
+              <button
+                onClick={() => handleLogin()}
+                disabled={isLoading}
+                className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white border-2 border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" viewBox="0 0 21 21" fill="none">
+                      <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+                      <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
+                      <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
+                      <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+                    </svg>
+                    Sign in with Microsoft
+                  </>
+                )}
+              </button>
 
-          <p className="mt-6 text-xs text-center text-gray-500">
-            By signing in, you agree to connect your Microsoft account
-          </p>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">or</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowDemoForm(true)}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Try Demo Mode (No Azure Required)
+              </button>
+
+              <p className="mt-6 text-xs text-center text-gray-500">
+                Demo mode: Full features without Microsoft login
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Your Email
+                  </label>
+                  <input
+                    type="email"
+                    value={demoEmail}
+                    onChange={(e) => setDemoEmail(e.target.value)}
+                    placeholder="demo@example.com"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    value={demoName}
+                    onChange={(e) => setDemoName(e.target.value)}
+                    placeholder="Demo User"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+
+                <button
+                  onClick={() => handleDemoLogin({ email: demoEmail, name: demoName || 'Demo User' })}
+                  disabled={isDemoLoading || !demoEmail}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDemoLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Starting Demo...
+                    </>
+                  ) : (
+                    <>
+                      Start Demo
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setShowDemoForm(false)}
+                  className="w-full px-6 py-2 text-sm text-gray-600 hover:text-gray-900"
+                >
+                  ← Back to login options
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer */}
