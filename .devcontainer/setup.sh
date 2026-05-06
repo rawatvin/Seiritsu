@@ -4,17 +4,36 @@ echo "=================================================="
 echo "Setting up Task Intelligence App in Codespaces..."
 echo "=================================================="
 
+# Install PostgreSQL and start it
+echo "📦 Setting up PostgreSQL..."
+sudo apt-get update
+sudo apt-get install -y postgresql postgresql-contrib
+sudo service postgresql start
+
+# Configure PostgreSQL
+sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+sudo -u postgres createdb task_intelligence || echo "Database already exists"
+
+echo "✅ PostgreSQL ready!"
+
 # Navigate to workspace
-cd /workspaces/task-intelligence-app || exit
+cd /workspaces/smart-task-app || cd /workspaces/task-intelligence-app || exit
 
 # Setup Backend
 echo ""
 echo "📦 Setting up Backend..."
 cd backend
 
+# Install Python dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
 # Create .env file if it doesn't exist
 if [ ! -f .env ]; then
     echo "Creating .env file..."
+    SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
+    JWT_SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
+
     cat > .env << EOF
 # Database
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/task_intelligence
@@ -22,31 +41,24 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/task_intellig
 # Microsoft Azure AD (You'll need to add these)
 MICROSOFT_CLIENT_ID=your_client_id_here
 MICROSOFT_CLIENT_SECRET=your_client_secret_here
-MICROSOFT_REDIRECT_URI=https://your-codespace-url-8000.githubpreview.dev/api/v1/auth/callback
+MICROSOFT_REDIRECT_URI=https://your-codespace-url-8000.app.github.dev/api/v1/auth/callback
 
 # Anthropic (Claude AI) (You'll need to add this)
 ANTHROPIC_API_KEY=your_anthropic_key_here
 
 # Security
-SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
-JWT_SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
+SECRET_KEY=$SECRET_KEY
+JWT_SECRET_KEY=$JWT_SECRET_KEY
 
-# Redis
+# Redis (optional)
 REDIS_URL=redis://localhost:6379/0
 
 # Environment
 ENVIRONMENT=development
 DEBUG=true
 EOF
+    echo "✅ Created backend/.env"
 fi
-
-# Wait for PostgreSQL to be ready
-echo "Waiting for PostgreSQL..."
-until pg_isready -h localhost -p 5432 -U postgres; do
-    echo "PostgreSQL is unavailable - sleeping"
-    sleep 2
-done
-echo "✅ PostgreSQL is ready!"
 
 # Create database tables
 echo "Creating database tables..."
@@ -60,12 +72,12 @@ async def init_db():
     print('✅ Database tables created!')
 
 asyncio.run(init_db())
-" || echo "⚠️  Database initialization failed (may already exist)"
+" 2>&1 || echo "⚠️  Database initialization warning (may already exist)"
 
 # Setup Frontend
 echo ""
 echo "📦 Setting up Frontend..."
-cd /workspaces/task-intelligence-app/frontend
+cd /workspaces/smart-task-app/frontend || cd /workspaces/task-intelligence-app/frontend
 
 # Install dependencies
 npm install
@@ -76,6 +88,7 @@ if [ ! -f .env ]; then
     cat > .env << EOF
 VITE_API_URL=http://localhost:8000
 EOF
+    echo "✅ Created frontend/.env"
 fi
 
 echo ""
@@ -83,7 +96,7 @@ echo "=================================================="
 echo "✅ Setup Complete!"
 echo "=================================================="
 echo ""
-echo "To start the application:"
+echo "🚀 To start the application:"
 echo ""
 echo "Terminal 1 - Backend:"
 echo "  cd backend"
@@ -93,7 +106,7 @@ echo "Terminal 2 - Frontend:"
 echo "  cd frontend"
 echo "  npm run dev -- --host"
 echo ""
-echo "⚠️  IMPORTANT: Update your .env files with:"
+echo "⚠️  IMPORTANT: Update backend/.env with:"
 echo "  - Microsoft Azure AD credentials"
 echo "  - Anthropic API key"
 echo "  - Update MICROSOFT_REDIRECT_URI with your Codespace URL"
