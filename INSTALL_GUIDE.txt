@@ -1,0 +1,206 @@
+========================================================
+TASK INTELLIGENCE - INSTALLATION GUIDE
+========================================================
+
+CURRENT STATUS:
+✅ Python - FOUND (Windows Store version)
+❌ Node.js - NOT INSTALLED
+❌ PostgreSQL - NOT INSTALLED
+
+========================================================
+STEP 1: INSTALL NODE.JS (5 minutes)
+========================================================
+
+1. Go to: https://nodejs.org/
+2. Download the "LTS" version (Long Term Support)
+3. Run the installer
+4. Accept all defaults
+5. Click "Install"
+6. Restart PowerShell after installation
+
+To verify: Open new PowerShell and type:
+   node --version
+
+You should see: v18.x.x or v20.x.x
+
+========================================================
+STEP 2: INSTALL POSTGRESQL (10 minutes)
+========================================================
+
+1. Go to: https://www.enterprisedb.com/downloads/postgres-postgresql-downloads
+2. Download PostgreSQL 14 or 15 for Windows x64
+3. Run the installer
+4. Set a password (remember this!)
+   Example: postgres123
+5. Accept default port: 5432
+6. Accept all other defaults
+7. Click "Install"
+8. Uncheck "Stack Builder" at the end
+9. Restart PowerShell after installation
+
+To verify: Open new PowerShell and type:
+   psql --version
+
+You should see: psql (PostgreSQL) 14.x or 15.x
+
+========================================================
+STEP 3: CREATE DATABASE
+========================================================
+
+Open PowerShell and run:
+
+   createdb -U postgres task_intelligence
+
+If prompted for password, enter the one you set during installation.
+
+========================================================
+STEP 4: GET API KEYS (15 minutes)
+========================================================
+
+A) MICROSOFT AZURE AD APP:
+   1. Go to: https://portal.azure.com
+   2. Navigate to: Azure Active Directory → App Registrations
+   3. Click "New Registration"
+   4. Name: "Task Intelligence"
+   5. Redirect URI: http://localhost:8000/api/v1/auth/callback
+   6. Click "Register"
+   7. Copy "Application (client) ID"
+   8. Go to "Certificates & secrets"
+   9. Click "New client secret"
+   10. Copy the secret VALUE (you can't see it again!)
+
+   API Permissions needed:
+   - User.Read
+   - Mail.Read
+   - Calendars.Read
+   - Files.Read.All
+   - Team.ReadBasic.All
+   - Chat.Read
+   - OnlineMeetings.Read
+
+B) ANTHROPIC API KEY:
+   1. Go to: https://console.anthropic.com/
+   2. Sign up / Log in
+   3. Go to API Keys
+   4. Click "Create Key"
+   5. Copy the key
+
+========================================================
+STEP 5: SETUP BACKEND
+========================================================
+
+1. Open PowerShell
+2. Navigate to project:
+   cd C:\Users\rawatvin\task-intelligence-app\backend
+
+3. Create virtual environment:
+   python -m venv venv
+
+4. Activate it:
+   .\venv\Scripts\Activate
+
+5. Install dependencies:
+   pip install -r requirements.txt
+
+6. Copy environment file:
+   copy .env.example .env
+
+7. Edit .env file with Notepad:
+   notepad .env
+
+   Fill in these values:
+   DATABASE_URL=postgresql+asyncpg://postgres:YOUR_PG_PASSWORD@localhost:5432/task_intelligence
+   MICROSOFT_CLIENT_ID=your_client_id_from_azure
+   MICROSOFT_CLIENT_SECRET=your_client_secret_from_azure
+   ANTHROPIC_API_KEY=your_anthropic_api_key
+
+   For SECRET_KEY and JWT_SECRET_KEY, generate them:
+   python -c "import secrets; print(secrets.token_hex(32))"
+   Copy output to SECRET_KEY
+
+   python -c "import secrets; print(secrets.token_hex(32))"
+   Copy output to JWT_SECRET_KEY
+
+   Save and close Notepad
+
+8. Start backend:
+   uvicorn app.main:app --reload --port 8000
+
+Keep this terminal open!
+
+========================================================
+STEP 6: SETUP FRONTEND (New Terminal)
+========================================================
+
+1. Open NEW PowerShell window
+2. Navigate to frontend:
+   cd C:\Users\rawatvin\task-intelligence-app\frontend
+
+3. Install dependencies:
+   npm install
+
+4. Start frontend:
+   npm run dev
+
+Keep this terminal open too!
+
+========================================================
+STEP 7: USE THE APP!
+========================================================
+
+1. Open browser: http://localhost:3000
+2. Click "Sign in with Microsoft"
+3. Grant permissions
+4. Start managing tasks!
+
+========================================================
+TROUBLESHOOTING
+========================================================
+
+Problem: "python not recognized"
+Solution: Uninstall Windows Store Python, install from python.org
+         Make sure to check "Add Python to PATH"
+
+Problem: "Cannot connect to database"
+Solution:
+  - Check PostgreSQL is running (search "Services" in Windows)
+  - Verify DATABASE_URL in backend\.env
+  - Test connection: psql -U postgres task_intelligence
+
+Problem: "npm install fails"
+Solution: Try: npm cache clean --force
+         Then: npm install again
+
+Problem: Scripts won't run
+Solution: Run PowerShell as Administrator, then:
+         Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+========================================================
+QUICK REFERENCE
+========================================================
+
+Start Backend:
+  cd C:\Users\rawatvin\task-intelligence-app\backend
+  .\venv\Scripts\Activate
+  uvicorn app.main:app --reload --port 8000
+
+Start Frontend:
+  cd C:\Users\rawatvin\task-intelligence-app\frontend
+  npm run dev
+
+Access:
+  Frontend: http://localhost:3000
+  Backend API: http://localhost:8000
+  API Docs: http://localhost:8000/docs
+
+========================================================
+NEED HELP?
+========================================================
+
+Check these files:
+- START_HERE.md
+- backend\QUICKSTART.md
+- frontend\FRONTEND_GUIDE.md
+- QUICK_START.md
+
+========================================================
