@@ -670,6 +670,8 @@
 
         .modal-body {
             padding: 1.5rem;
+            max-height: calc(90vh - 140px);
+            overflow-y: auto;
         }
 
         .form-grid {
@@ -1169,94 +1171,96 @@
 
     <!-- Field Configuration Modal -->
     <div id="fieldModal" class="modal">
-        <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-content" style="max-width: 650px;">
             <div class="modal-header">
                 <h2 class="modal-title" id="fieldModalTitle">Add Custom Field</h2>
                 <button class="modal-close" onclick="closeFieldModal()">&times;</button>
             </div>
-            <form id="fieldForm">
-                <input type="hidden" id="fieldEditId">
+            <div class="modal-body">
+                <form id="fieldForm">
+                    <input type="hidden" id="fieldEditId">
 
-                <div class="form-group">
-                    <label class="form-label">Field Name <span style="color: red;">*</span></label>
-                    <input type="text" class="form-input" id="fieldName" required
-                           placeholder="e.g., customPriority, marketSpecificNotes">
-                    <small style="color: var(--gray-600); font-size: 0.75rem;">Use camelCase (no spaces). This is the technical field name.</small>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">Field Name <span style="color: red;">*</span></label>
+                        <input type="text" class="form-input" id="fieldName" required
+                               placeholder="e.g., customPriority, marketSpecificNotes">
+                        <small style="color: var(--gray-600); font-size: 0.75rem;">Use camelCase (no spaces). This is the technical field name.</small>
+                    </div>
 
-                <div class="form-group">
-                    <label class="form-label">Display Label <span style="color: red;">*</span></label>
-                    <input type="text" class="form-input" id="fieldLabel" required
-                           placeholder="e.g., Priority, Market-Specific Notes">
-                    <small style="color: var(--gray-600); font-size: 0.75rem;">This is what users will see.</small>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">Display Label <span style="color: red;">*</span></label>
+                        <input type="text" class="form-input" id="fieldLabel" required
+                               placeholder="e.g., Priority, Market-Specific Notes">
+                        <small style="color: var(--gray-600); font-size: 0.75rem;">This is what users will see.</small>
+                    </div>
 
-                <div class="form-group">
-                    <label class="form-label">Description</label>
-                    <textarea class="form-input" id="fieldDescription" rows="2"
-                              placeholder="Describe what this field is for"></textarea>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-input" id="fieldDescription" rows="2"
+                                  placeholder="Describe what this field is for"></textarea>
+                    </div>
 
-                <div class="form-group">
-                    <label class="form-label">Field Type <span style="color: red;">*</span></label>
-                    <select class="form-input" id="fieldType" required onchange="handleFieldTypeChange()">
-                        <option value="">Select type...</option>
-                        <option value="text">Text (single line)</option>
-                        <option value="textarea">Text Area (multi-line)</option>
-                        <option value="number">Number</option>
-                        <option value="money">Money (€)</option>
-                        <option value="date">Date</option>
-                        <option value="checkbox">Checkbox (Yes/No)</option>
-                        <option value="singleselect">Single Select (dropdown)</option>
-                        <option value="multiselect">Multi-Select</option>
-                        <option value="contact">Contact (person name)</option>
-                        <option value="calculation">Calculation (formula)</option>
-                    </select>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">Field Type <span style="color: red;">*</span></label>
+                        <select class="form-input" id="fieldType" required onchange="handleFieldTypeChange()">
+                            <option value="">Select type...</option>
+                            <option value="text">Text (single line)</option>
+                            <option value="textarea">Text Area (multi-line)</option>
+                            <option value="number">Number</option>
+                            <option value="money">Money (€)</option>
+                            <option value="date">Date</option>
+                            <option value="checkbox">Checkbox (Yes/No)</option>
+                            <option value="singleselect">Single Select (dropdown)</option>
+                            <option value="multiselect">Multi-Select</option>
+                            <option value="contact">Contact (person name)</option>
+                            <option value="calculation">Calculation (formula)</option>
+                        </select>
+                    </div>
 
-                <div class="form-group" id="optionsGroup" style="display: none;">
-                    <label class="form-label">Options <span style="color: red;">*</span></label>
-                    <textarea class="form-input" id="fieldOptions" rows="3"
-                              placeholder="Enter one option per line, e.g.:&#10;High&#10;Medium&#10;Low"></textarea>
-                    <small style="color: var(--gray-600); font-size: 0.75rem;">Enter one option per line.</small>
-                </div>
+                    <div class="form-group" id="optionsGroup" style="display: none;">
+                        <label class="form-label">Options <span style="color: red;">*</span></label>
+                        <textarea class="form-input" id="fieldOptions" rows="3"
+                                  placeholder="Enter one option per line, e.g.:&#10;High&#10;Medium&#10;Low"></textarea>
+                        <small style="color: var(--gray-600); font-size: 0.75rem;">Enter one option per line.</small>
+                    </div>
 
-                <div class="form-group" id="calculationGroup" style="display: none;">
-                    <label class="form-label">Calculation Formula <span style="color: red;">*</span></label>
-                    <input type="text" class="form-input" id="fieldCalculation"
-                           placeholder="e.g., estimatedCapitalCost + estimatedOperatingCost">
-                    <small style="color: var(--gray-600); font-size: 0.75rem;">Use field names and operators (+, -, *, /). Example: field1 + field2</small>
-                </div>
+                    <div class="form-group" id="calculationGroup" style="display: none;">
+                        <label class="form-label">Calculation Formula <span style="color: red;">*</span></label>
+                        <input type="text" class="form-input" id="fieldCalculation"
+                               placeholder="e.g., estimatedCapitalCost + estimatedOperatingCost">
+                        <small style="color: var(--gray-600); font-size: 0.75rem;">Use field names and operators (+, -, *, /). Example: field1 + field2</small>
+                    </div>
 
-                <div class="form-group">
-                    <label class="form-label">Section <span style="color: red;">*</span></label>
-                    <select class="form-input" id="fieldSection" required>
-                        <option value="">Select section...</option>
-                        <option value="requester">Requester Information</option>
-                        <option value="portfolio">Portfolio Team</option>
-                        <option value="techLead">Tech Lead - Cost & Timeline</option>
-                        <option value="custom">Custom Section</option>
-                    </select>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">Section <span style="color: red;">*</span></label>
+                        <select class="form-input" id="fieldSection" required onchange="handleSectionChange()">
+                            <option value="">Select section...</option>
+                            <option value="requester">Requester Information</option>
+                            <option value="portfolio">Portfolio Team</option>
+                            <option value="techLead">Tech Lead - Cost & Timeline</option>
+                            <option value="custom">Custom Section</option>
+                        </select>
+                    </div>
 
-                <div class="form-group" id="customSectionGroup" style="display: none;">
-                    <label class="form-label">Custom Section Name <span style="color: red;">*</span></label>
-                    <input type="text" class="form-input" id="fieldCustomSection"
-                           placeholder="e.g., Market-Specific Details">
-                </div>
+                    <div class="form-group" id="customSectionGroup" style="display: none;">
+                        <label class="form-label">Custom Section Name <span style="color: red;">*</span></label>
+                        <input type="text" class="form-input" id="fieldCustomSection"
+                               placeholder="e.g., Market-Specific Details">
+                    </div>
 
-                <div class="form-group">
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="fieldRequired">
-                        <span>Required Field</span>
-                    </label>
-                </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="fieldRequired">
+                            <span>Required Field</span>
+                        </label>
+                    </div>
 
-                <div class="action-buttons">
-                    <button type="submit" class="btn btn-primary">Save Field</button>
-                    <button type="button" class="btn btn-outline" onclick="closeFieldModal()">Cancel</button>
-                </div>
-            </form>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--gray-200);">
+                        <button type="submit" class="btn btn-primary">Save Field</button>
+                        <button type="button" class="btn btn-outline" onclick="closeFieldModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -5664,10 +5668,11 @@
             calculationGroup.style.display = (type === 'calculation') ? 'block' : 'none';
         }
 
-        document.getElementById('fieldSection').addEventListener('change', function() {
+        function handleSectionChange() {
+            const section = document.getElementById('fieldSection').value;
             const customSectionGroup = document.getElementById('customSectionGroup');
-            customSectionGroup.style.display = this.value === 'custom' ? 'block' : 'none';
-        });
+            customSectionGroup.style.display = section === 'custom' ? 'block' : 'none';
+        }
 
         document.getElementById('fieldForm').addEventListener('submit', async function(e) {
             e.preventDefault();
