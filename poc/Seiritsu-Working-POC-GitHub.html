@@ -958,15 +958,6 @@
                             <button class="btn btn-sm" id="btnChronological" onclick="setViewMode('chronological')" style="background: var(--primary); color: white;">Chronological</button>
                             <button class="btn btn-sm btn-outline" id="btnSwimlanes" onclick="setViewMode('swimlanes')">Swimlanes</button>
                         </div>
-
-                        <!-- Zoom Controls -->
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <span style="font-size: 0.875rem; color: var(--gray-600);">Zoom:</span>
-                            <button class="btn btn-sm btn-outline" onclick="setTimelineZoom('year')">Year</button>
-                            <button class="btn btn-sm btn-outline" onclick="setTimelineZoom('quarter')">Quarter</button>
-                            <button class="btn btn-sm" onclick="setTimelineZoom('month')" style="background: var(--primary); color: white;" id="btnZoomMonth">Month</button>
-                            <button class="btn btn-sm btn-outline" onclick="setTimelineZoom('week')">Week</button>
-                        </div>
                     </div>
                 </div>
 
@@ -1987,9 +1978,7 @@
         // Roadmap Timeline Rendering
         let roadmapState = {
             timelineType: 'planned', // 'planned' or 'actual'
-            viewMode: 'chronological', // 'chronological' or 'swimlanes'
-            zoomLevel: 'month', // 'year', 'quarter', 'month', 'week'
-            scrollPosition: 0
+            viewMode: 'chronological' // 'chronological' or 'swimlanes'
         };
 
         function setTimelineType(type) {
@@ -2022,28 +2011,6 @@
             renderRoadmap();
         }
 
-        function setTimelineZoom(level) {
-            roadmapState.zoomLevel = level;
-
-            // Update button styles
-            const buttons = {
-                'year': document.querySelectorAll('.card-header button')[6],
-                'quarter': document.querySelectorAll('.card-header button')[7],
-                'month': document.getElementById('btnZoomMonth'),
-                'week': document.querySelectorAll('.card-header button')[9]
-            };
-
-            Object.keys(buttons).forEach(key => {
-                const btn = buttons[key];
-                if (btn) {
-                    btn.className = key === level ? 'btn btn-sm' : 'btn btn-sm btn-outline';
-                    btn.style.background = key === level ? 'var(--primary)' : '';
-                    btn.style.color = key === level ? 'white' : '';
-                }
-            });
-
-            renderRoadmap();
-        }
 
         async function renderRoadmap() {
             let requests = await getAllRequests();
@@ -2096,8 +2063,8 @@
             const minDate = allDates.length > 0 ? new Date(Math.min(...allDates, defaultStart)) : defaultStart;
             const maxDate = allDates.length > 0 ? new Date(Math.max(...allDates, defaultEnd)) : defaultEnd;
 
-            // Generate time periods
-            const timePeriods = generateTimePeriods(minDate, maxDate, roadmapState.zoomLevel);
+            // Generate time periods (monthly view)
+            const timePeriods = generateTimePeriods(minDate, maxDate);
 
             // Populate filters if empty
             await populateRoadmapFilters();
@@ -2170,96 +2137,28 @@
             renderRoadmap();
         }
 
-        function generateTimePeriods(startDate, endDate, zoom) {
+        function generateTimePeriods(startDate, endDate) {
             const periods = [];
             const now = new Date();
-            let current = new Date(startDate);
 
-            if (zoom === 'year') {
-                current = new Date(current.getFullYear(), 0, 1);
-                while (current <= endDate) {
-                    const year = current.getFullYear();
-                    const periodStart = new Date(year, 0, 1);
-                    const periodEnd = new Date(year, 11, 31, 23, 59, 59);
+            // Always generate monthly periods
+            let current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
 
-                    periods.push({
-                        label: `${year}`,
-                        start: periodStart,
-                        end: periodEnd,
-                        isCurrent: now >= periodStart && now <= periodEnd
-                    });
+            while (current <= endDate) {
+                const periodStart = new Date(current.getFullYear(), current.getMonth(), 1);
+                const periodEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59);
 
-                    current = new Date(year + 1, 0, 1);
-                }
-            } else if (zoom === 'quarter') {
-                const startQuarter = Math.floor(current.getMonth() / 3);
-                current = new Date(current.getFullYear(), startQuarter * 3, 1);
+                periods.push({
+                    label: current.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+                    start: periodStart,
+                    end: periodEnd,
+                    isCurrent: now >= periodStart && now <= periodEnd
+                });
 
-                while (current <= endDate) {
-                    const quarter = Math.floor(current.getMonth() / 3) + 1;
-                    const year = current.getFullYear();
-                    const periodStart = new Date(year, (quarter - 1) * 3, 1);
-                    const periodEnd = new Date(year, quarter * 3, 0, 23, 59, 59);
-
-                    periods.push({
-                        label: `Q${quarter}\n${year}`,
-                        start: periodStart,
-                        end: periodEnd,
-                        isCurrent: now >= periodStart && now <= periodEnd
-                    });
-
-                    current = new Date(year, quarter * 3, 1);
-                }
-            } else if (zoom === 'month') {
-                current = new Date(current.getFullYear(), current.getMonth(), 1);
-
-                while (current <= endDate) {
-                    const periodStart = new Date(current.getFullYear(), current.getMonth(), 1);
-                    const periodEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59);
-
-                    periods.push({
-                        label: current.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-                        start: periodStart,
-                        end: periodEnd,
-                        isCurrent: now >= periodStart && now <= periodEnd
-                    });
-
-                    current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
-                }
-            } else if (zoom === 'week') {
-                // Start from Monday
-                const dayOfWeek = current.getDay();
-                const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                current.setDate(current.getDate() - daysToMonday);
-
-                while (current <= endDate) {
-                    const periodStart = new Date(current);
-                    const periodEnd = new Date(current);
-                    periodEnd.setDate(periodEnd.getDate() + 6);
-                    periodEnd.setHours(23, 59, 59);
-
-                    const weekNum = getWeekNumber(periodStart);
-
-                    periods.push({
-                        label: `W${weekNum}\n${periodStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
-                        start: periodStart,
-                        end: periodEnd,
-                        isCurrent: now >= periodStart && now <= periodEnd
-                    });
-
-                    current.setDate(current.getDate() + 7);
-                }
+                current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
             }
 
             return periods;
-        }
-
-        function getWeekNumber(date) {
-            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-            const dayNum = d.getUTCDay() || 7;
-            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-            return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
         }
 
         function renderChronologicalView(requests, timePeriods, dateField) {
