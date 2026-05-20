@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seiritsu - Smart Portfolio & Roadmap Tool | POC Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0078d4;
+            --primary-dark: #005a9e;
+            --success: #107c10;
+            --warning: #ffaa44;
+            --danger: #d13438;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-600: #4b5563;
+            --gray-800: #1f2937;
+            --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            --shadow-lg: 0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-800);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 1rem 2rem;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .logo span {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            font-weight: 400;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .notification-badge {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .notification-badge::after {
+            content: '3';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .nav {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0 2rem;
+        }
+
+        .nav-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-tab {
+            padding: 1rem 0.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            color: var(--gray-600);
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-tab:hover {
+            color: var(--primary);
+        }
+
+        .nav-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-card.warning {
+            border-left-color: var(--warning);
+        }
+
+        .stat-card.danger {
+            border-left-color: var(--danger);
+        }
+
+        .stat-card.success {
+            border-left-color: var(--success);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-800);
+        }
+
+        .stat-change {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .stat-change.positive {
+            color: var(--success);
+        }
+
+        .stat-change.negative {
+            color: var(--danger);
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid var(--gray-300);
+            color: var(--gray-600);
+        }
+
+        .btn-outline:hover {
+            background: var(--gray-50);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            text-align: left;
+            padding: 0.75rem;
+            background: var(--gray-50);
+            color: var(--gray-600);
+            font-weight: 600;
+            font-size: 0.875rem;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .table td {
+            padding: 1rem 0.75rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .table tr:hover {
+            background: var(--gray-50);
+            cursor: pointer;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-green {
+            background: #d1f4e0;
+            color: var(--success);
+        }
+
+        .badge-yellow {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-red {
+            background: #f8d7da;
+            color: var(--danger);
+        }
+
+        .badge-blue {
+            background: #cfe2ff;
+            color: var(--primary);
+        }
+
+        .badge-gray {
+            background: var(--gray-200);
+            color: var(--gray-600);
+        }
+
+        .sla-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sla-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .sla-dot.green {
+            background: var(--success);
+        }
+
+        .sla-dot.yellow {
+            background: var(--warning);
+        }
+
+        .sla-dot.red {
+            background: var(--danger);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .kanban-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .kanban-column {
+            background: var(--gray-100);
+            border-radius: 8px;
+            padding: 1rem;
+            min-height: 500px;
+        }
+
+        .kanban-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--gray-300);
+        }
+
+        .kanban-title {
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .kanban-count {
+            background: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .kanban-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: move;
+            transition: transform 0.2s;
+        }
+
+        .kanban-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .kanban-card-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--gray-800);
+        }
+
+        .kanban-card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-family: inherit;
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--gray-300);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 2rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2.5rem;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .timeline-quarter {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .timeline-project {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .timeline-project-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .timeline-project-meta {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 4px solid var(--warning);
+            color: #856404;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border-left: 4px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .alert-icon {
+            font-size: 1.5rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-600);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .detail-row {
+            display: flex;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .detail-label {
+            font-weight: 600;
+            width: 150px;
+            color: var(--gray-600);
+        }
+
+        .detail-value {
+            flex: 1;
+            color: var(--gray-800);
+        }
+
+        .priority-high {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        .priority-medium {
+            color: var(--warning);
+            font-weight: 600;
+        }
+
+        .priority-low {
+            color: var(--gray-600);
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .kanban-board {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <h1>Seiritsu</h1>
+                <span>Smart Portfolio & Roadmap Tool</span>
+            </div>
+            <div class="user-info">
+                <div class="notification-badge">
+                    <span style="font-size: 1.5rem; cursor: pointer;">🔔</span>
+                </div>
+                <div class="user-avatar">JD</div>
+                <div>
+                    <div style="font-weight: 600;">John Doe</div>
+                    <div style="font-size: 0.875rem; color: var(--gray-600);">Portfolio Manager</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <div class="nav-tab active" onclick="switchView('dashboard')">Dashboard</div>
+            <div class="nav-tab" onclick="switchView('my-work')">My Work</div>
+            <div class="nav-tab" onclick="switchView('kanban')">Kanban Board</div>
+            <div class="nav-tab" onclick="switchView('roadmap')">Roadmap</div>
+            <div class="nav-tab" onclick="switchView('analytics')">Analytics</div>
+            <div class="nav-tab" onclick="switchView('submit')">+ New Request</div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Dashboard View -->
+        <div id="dashboard" class="view active">
+            <!-- Alerts -->
+            <div class="alert alert-danger">
+                <div class="alert-icon">🚨</div>
+                <div>
+                    <strong>3 SLA Breaches</strong> require immediate attention.
+                    REQ-0234, REQ-0189, REQ-0156 have been escalated to team leads.
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Active Requests</div>
+                    <div class="stat-value">127</div>
+                    <div class="stat-change positive">↑ 12% from last month</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-label">Pending SLA Breach</div>
+                    <div class="stat-value">8</div>
+                    <div class="stat-change negative">↑ 3 in last 24h</div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-label">SLA Breaches</div>
+                    <div class="stat-value">3</div>
+                    <div class="stat-change">Requires immediate action</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-label">Avg. Lead Time</div>
+                    <div class="stat-value">12d</div>
+                    <div class="stat-change positive">↓ 18% improvement</div>
+                </div>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Requests by Stage</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="stageChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">SLA Compliance Trend</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="slaChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Recent Activity</h2>
+                    <button class="btn btn-outline">View All</button>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Request</th>
+                            <th>Requestor</th>
+                            <th>Stage</th>
+                            <th>SLA Status</th>
+                            <th>Owner</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr onclick="showRequestDetail('REQ-0245')">
+                            <td><strong>REQ-0245</strong></td>
+                            <td>New Mobile App Feature - AR Try-On</td>
+                            <td>Sarah Chen (APAC)</td>
+                            <td><span class="badge badge-blue">Feasibility</span></td>
+                            <td>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot green"></span>
+                                    <span>On Track</span>
+                                </div>
+                            </td>
+                            <td>Mike Johnson</td>
+                        </tr>
+                        <tr onclick="showRequestDetail('REQ-0234')">
+                            <td><strong>REQ-0234</strong></td>
+                            <td>Sustainability Dashboard Enhancement</td>
+                            <td>Lars Schmidt (EMEA)</td>
+                            <td><span class="badge badge-yellow">Funding</span></td>
+                            <td>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot red"></span>
+                                    <span style="color: var(--danger)">Breached</span>
+                                </div>
+                            </td>
+                            <td>Emma Wilson</td>
+                        </tr>
+                        <tr onclick="showRequestDetail('REQ-0221')">
+                            <td><strong>REQ-0221</strong></td>
+                            <td>Supply Chain Visibility Platform</td>
+                            <td>James Park (NA)</td>
+                            <td><span class="badge badge-green">Approved</span></td>
+                            <td>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot green"></span>
+                                    <span>On Track</span>
+                                </div>
+                            </td>
+                            <td>Alex Turner</td>
+                        </tr>
+                        <tr onclick="showRequestDetail('REQ-0189')">
+                            <td><strong>REQ-0189</strong></td>
+                            <td>AI-Powered Size Recommendation</td>
+                            <td>Maria Garcia (Global)</td>
+                            <td><span class="badge badge-blue">Feasibility</span></td>
+                            <td>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot red"></span>
+                                    <span style="color: var(--danger)">Breached</span>
+                                </div>
+                            </td>
+                            <td>Chris Davis</td>
+                        </tr>
+                        <tr onclick="showRequestDetail('REQ-0178')">
+                            <td><strong>REQ-0178</strong></td>
+                            <td>Customer Loyalty Program V2</td>
+                            <td>Anna Kowalski (EMEA)</td>
+                            <td><span class="badge badge-gray">Roadmap</span></td>
+                            <td>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot green"></span>
+                                    <span>On Track</span>
+                                </div>
+                            </td>
+                            <td>Taylor Brown</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- My Work View -->
+        <div id="my-work" class="view">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">My Assignments (5)</h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-outline">Filter</button>
+                        <button class="btn btn-outline">Sort</button>
+                    </div>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Request</th>
+                            <th>Stage</th>
+                            <th>Priority</th>
+                            <th>SLA Status</th>
+                            <th>Due Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr onclick="showRequestDetail('REQ-0245')">
+                            <td><strong>REQ-0245</strong></td>
+                            <td>New Mobile App Feature - AR Try-On</td>
+                            <td><span class="badge badge-blue">Feasibility</span></td>
+                            <td><span class="priority-high">High</span></td>
+                            <td>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot green"></span>
+                                    <span>3 days left</span>
+                                </div>
+                            </td>
+                            <td>May 22, 2026</td>
+                        </tr>
+                        <tr onclick="showRequestDetail('REQ-0221')">
+                            <td><strong>REQ-0221</strong></td>
+                            <td>Supply Chain Visibility Platform</td>
+                            <td><span class="badge badge-green">Approved</span></td>
+                            <td><span class="priority-medium">Medium</span></td>
+                            <td>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot green"></span>
+                                    <span>5 days left</span>
+                                </div>
+                            </td>
+                            <td>May 24, 2026</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Watching (8)</h2>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Request</th>
+                            <th>Stage</th>
+                            <th>Owner</th>
+                            <th>Last Update</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr onclick="showRequestDetail('REQ-0234')">
+                            <td><strong>REQ-0234</strong></td>
+                            <td>Sustainability Dashboard Enhancement</td>
+                            <td><span class="badge badge-yellow">Funding</span></td>
+                            <td>Emma Wilson</td>
+                            <td>2 hours ago</td>
+                        </tr>
+                        <tr onclick="showRequestDetail('REQ-0189')">
+                            <td><strong>REQ-0189</strong></td>
+                            <td>AI-Powered Size Recommendation</td>
+                            <td><span class="badge badge-blue">Feasibility</span></td>
+                            <td>Chris Davis</td>
+                            <td>1 day ago</td>
+                        </tr>
+                        <tr onclick="showRequestDetail('REQ-0178')">
+                            <td><strong>REQ-0178</strong></td>
+                            <td>Customer Loyalty Program V2</td>
+                            <td><span class="badge badge-gray">Roadmap</span></td>
+                            <td>Taylor Brown</td>
+                            <td>3 days ago</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Kanban Board View -->
+        <div id="kanban" class="view">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Portfolio Pipeline</h2>
+                    <button class="btn btn-outline">Filter by Team</button>
+                </div>
+                <div class="kanban-board">
+                    <!-- Intake -->
+                    <div class="kanban-column">
+                        <div class="kanban-header">
+                            <div class="kanban-title">📥 Intake</div>
+                            <div class="kanban-count">23</div>
+                        </div>
+                        <div class="kanban-card">
+                            <div class="kanban-card-title">REQ-0267: Virtual Store Experience</div>
+                            <div><span class="badge badge-blue">High Priority</span></div>
+                            <div class="kanban-card-meta">
+                                <span>👤 Lisa Wang</span>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot green"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kanban-card">
+                            <div class="kanban-card-title">REQ-0266: Influencer Portal Integration</div>
+                            <div><span class="badge badge-gray">Medium</span></div>
+                            <div class="kanban-card-meta">
+                                <span>👤 Tom Hardy</span>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot green"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kanban-card">
+                            <div class="kanban-card-title">REQ-0265: Social Commerce Features</div>
+                            <div><span class="badge badge-gray">Low</span></div>
+                            <div class="kanban-card-meta">
+                                <span>👤 Emma Lee</span>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot yellow"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feasibility -->
+                    <div class="kanban-column">
+                        <div class="kanban-header">
+                            <div class="kanban-title">🔍 Feasibility</div>
+                            <div class="kanban-count">15</div>
+                        </div>
+                        <div class="kanban-card">
+                            <div class="kanban-card-title">REQ-0245: AR Try-On Feature</div>
+                            <div><span class="badge badge-blue">High Priority</span></div>
+                            <div class="kanban-card-meta">
+                                <span>👤 Mike Johnson</span>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot green"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kanban-card">
+                            <div class="kanban-card-title">REQ-0189: AI Size Recommendation</div>
+                            <div><span class="badge badge-blue">High Priority</span></div>
+                            <div class="kanban-card-meta">
+                                <span>👤 Chris Davis</span>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot red"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kanban-card">
+                            <div class="kanban-card-title">REQ-0201: Blockchain Authentication</div>
+                            <div><span class="badge badge-gray">Medium</span></div>
+                            <div class="kanban-card-meta">
+                                <span>👤 Rachel Green</span>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot yellow"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Funding -->
+                    <div class="kanban-column">
+                        <div class="kanban-header">
+                            <div class="kanban-title">💰 Funding</div>
+                            <div class="kanban-count">12</div>
+                        </div>
+                        <div class="kanban-card">
+                            <div class="kanban-card-title">REQ-0234: Sustainability Dashboard</div>
+                            <div><span class="badge badge-blue">High Priority</span></div>
+                            <div class="kanban-card-meta">
+                                <span>👤 Emma Wilson</span>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot red"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kanban-card">
+                            <div class="kanban-card-title">REQ-0223: Omnichannel Inventory</div>
+                            <div><span class="badge badge-gray">Medium</span></div>
+                            <div class="kanban-card-meta">
+                                <span>👤 David Kim</span>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot green"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Approved -->
+                    <div class="kanban-column">
+                        <div class="kanban-header">
+                            <div class="kanban-title">✅ Approved</div>
+                            <div class="kanban-count">8</div>
+                        </div>
+                        <div class="kanban-card">
+                            <div class="kanban-card-title">REQ-0221: Supply Chain Platform</div>
+                            <div><span class="badge badge-blue">High Priority</span></div>
+                            <div class="kanban-card-meta">
+                                <span>👤 Alex Turner</span>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot green"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kanban-card">
+                            <div class="kanban-card-title">REQ-0215: Store Analytics Dashboard</div>
+                            <div><span class="badge badge-gray">Medium</span></div>
+                            <div class="kanban-card-meta">
+                                <span>👤 Nina Patel</span>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot green"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Roadmap -->
+                    <div class="kanban-column">
+                        <div class="kanban-header">
+                            <div class="kanban-title">🗺️ Roadmap</div>
+                            <div class="kanban-count">34</div>
+                        </div>
+                        <div class="kanban-card">
+                            <div class="kanban-card-title">REQ-0178: Loyalty Program V2</div>
+                            <div><span class="badge badge-green">In Progress</span></div>
+                            <div class="kanban-card-meta">
+                                <span>👤 Taylor Brown</span>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot green"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kanban-card">
+                            <div class="kanban-card-title">REQ-0156: Personalization Engine</div>
+                            <div><span class="badge badge-green">Testing</span></div>
+                            <div class="kanban-card-meta">
+                                <span>👤 Sam Rodriguez</span>
+                                <div class="sla-indicator">
+                                    <span class="sla-dot green"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Roadmap View -->
+        <div id="roadmap" class="view">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Product Roadmap 2026</h2>
+                    <button class="btn btn-outline">Export to PDF</button>
+                </div>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-quarter">Q2 2026 (Current)</div>
+                        <div class="timeline-items">
+                            <div class="timeline-project">
+                                <div class="timeline-project-title">REQ-0178: Customer Loyalty Program V2</div>
+                                <div class="timeline-project-meta">
+                                    Owner: Taylor Brown | Team: CX Platform |
+                                    <span class="badge badge-green">75% Complete</span>
+                                </div>
+                            </div>
+                            <div class="timeline-project">
+                                <div class="timeline-project-title">REQ-0156: AI Personalization Engine</div>
+                                <div class="timeline-project-meta">
+                                    Owner: Sam Rodriguez | Team: Data & AI |
+                                    <span class="badge badge-yellow">Testing Phase</span>
+                                </div>
+                            </div>
+                            <div class="timeline-project">
+                                <div class="timeline-project-title">REQ-0134: Mobile App 3.0 Redesign</div>
+                                <div class="timeline-project-meta">
+                                    Owner: Lisa Wang | Team: Mobile |
+                                    <span class="badge badge-green">90% Complete</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-quarter">Q3 2026</div>
+                        <div class="timeline-items">
+                            <div class="timeline-project">
+                                <div class="timeline-project-title">REQ-0221: Supply Chain Visibility Platform</div>
+                                <div class="timeline-project-meta">
+                                    Owner: Alex Turner | Team: Operations |
+                                    <span class="badge badge-blue">Planning</span>
+                                </div>
+                            </div>
+                            <div class="timeline-project">
+                                <div class="timeline-project-title">REQ-0245: AR Virtual Try-On Feature</div>
+                                <div class="timeline-project-meta">
+                                    Owner: Mike Johnson | Team: Innovation |
+                                    <span class="badge badge-blue">Feasibility Complete</span>
+                                </div>
+                            </div>
+                            <div class="timeline-project">
+                                <div class="timeline-project-title">REQ-0234: Sustainability Dashboard</div>
+                                <div class="timeline-project-meta">
+                                    Owner: Emma Wilson | Team: Sustainability |
+                                    <span class="badge badge-yellow">Funding Approved</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-quarter">Q4 2026</div>
+                        <div class="timeline-items">
+                            <div class="timeline-project">
+                                <div class="timeline-project-title">REQ-0189: AI-Powered Size Recommendation</div>
+                                <div class="timeline-project-meta">
+                                    Owner: Chris Davis | Team: Data & AI |
+                                    <span class="badge badge-blue">In Feasibility</span>
+                                </div>
+                            </div>
+                            <div class="timeline-project">
+                                <div class="timeline-project-title">REQ-0201: NFT Product Authentication</div>
+                                <div class="timeline-project-meta">
+                                    Owner: Rachel Green | Team: Innovation |
+                                    <span class="badge badge-blue">In Feasibility</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-quarter">Q1 2027</div>
+                        <div class="timeline-items">
+                            <div class="timeline-project">
+                                <div class="timeline-project-title">REQ-0267: Virtual Store Experience</div>
+                                <div class="timeline-project-meta">
+                                    Owner: Lisa Wang | Team: Store Tech |
+                                    <span class="badge badge-gray">Intake</span>
+                                </div>
+                            </div>
+                            <div class="timeline-project">
+                                <div class="timeline-project-title">REQ-0223: Omnichannel Inventory System</div>
+                                <div class="timeline-project-meta">
+                                    Owner: David Kim | Team: Operations |
+                                    <span class="badge badge-yellow">In Funding</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics View -->
+        <div id="analytics" class="view">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Portfolio Analytics</h2>
+                    <select class="btn btn-outline">
+                        <option>Last 30 Days</option>
+                        <option>Last Quarter</option>
+                        <option>Last Year</option>
+                    </select>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Average Lead Time</div>
+                        <div class="stat-value">12.3d</div>
+                        <div class="stat-change positive">↓ 2.1 days vs last quarter</div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="stat-label">SLA Compliance Rate</div>
+                        <div class="stat-value">92%</div>
+                        <div class="stat-change positive">↑ 5% improvement</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Requests Completed</div>
+                        <div class="stat-value">47</div>
+                        <div class="stat-change">This quarter</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg. Funding Approval Time</div>
+                        <div class="stat-value">8.7d</div>
+                        <div class="stat-change positive">↓ 1.3 days improvement</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Requests by Market</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="marketChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Lead Time by Stage</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="leadTimeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Top Contributors</h2>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Team</th>
+                            <th>Assigned Requests</th>
+                            <th>Completed</th>
+                            <th>SLA Compliance</th>
+                            <th>Avg. Lead Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Mike Johnson</strong></td>
+                            <td>Innovation</td>
+                            <td>12</td>
+                            <td>8</td>
+                            <td><span class="badge badge-green">96%</span></td>
+                            <td>10.2 days</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Emma Wilson</strong></td>
+                            <td>Sustainability</td>
+                            <td>9</td>
+                            <td>7</td>
+                            <td><span class="badge badge-yellow">88%</span></td>
+                            <td>13.5 days</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Alex Turner</strong></td>
+                            <td>Operations</td>
+                            <td>15</td>
+                            <td>12</td>
+                            <td><span class="badge badge-green">95%</span></td>
+                            <td>11.8 days</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Taylor Brown</strong></td>
+                            <td>CX Platform</td>
+                            <td>11</td>
+                            <td>9</td>
+                            <td><span class="badge badge-green">93%</span></td>
+                            <td>12.1 days</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Submit Request View -->
+        <div id="submit" class="view">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Submit New Request</h2>
+                </div>
+                <form onsubmit="submitRequest(event)">
+                    <div class="form-group">
+                        <label class="form-label">Request Title *</label>
+                        <input type="text" class="form-input" placeholder="e.g., New Customer Portal Feature" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description *</label>
+                        <textarea class="form-textarea" placeholder="Describe your request in detail..." required></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Market/Team *</label>
+                            <select class="form-select" required>
+                                <option value="">Select...</option>
+                                <option>Global</option>
+                                <option>EMEA</option>
+                                <option>APAC</option>
+                                <option>North America</option>
+                                <option>Latin America</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Priority *</label>
+                            <select class="form-select" required>
+                                <option value="">Select...</option>
+                                <option>Critical</option>
+                                <option>High</option>
+                                <option selected>Medium</option>
+                                <option>Low</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Business Case / Expected Value *</label>
+                        <textarea class="form-textarea" placeholder="Explain the business value, expected benefits, and impact..." required></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Target Completion Date</label>
+                            <input type="date" class="form-input">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Estimated Budget</label>
+                            <input type="text" class="form-input" placeholder="e.g., €50,000">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Attachments</label>
+                        <input type="file" class="form-input" multiple>
+                        <div style="font-size: 0.875rem; color: var(--gray-600); margin-top: 0.5rem;">
+                            Upload supporting documents, mockups, or business case materials
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button type="submit" class="btn btn-primary">Submit Request</button>
+                        <button type="button" class="btn btn-outline" onclick="switchView('dashboard')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request Detail Modal -->
+    <div id="requestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Request Details</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-row">
+                    <div class="detail-label">Request ID</div>
+                    <div class="detail-value"><strong id="modalId">REQ-0245</strong></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Title</div>
+                    <div class="detail-value" id="modalRequestTitle">New Mobile App Feature - AR Try-On</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Description</div>
+                    <div class="detail-value">Implement augmented reality try-on functionality in the mobile app allowing customers to virtually try shoes and apparel using their phone camera. This will reduce return rates and increase customer satisfaction.</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Requestor</div>
+                    <div class="detail-value">Sarah Chen (APAC Marketing)</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Current Stage</div>
+                    <div class="detail-value"><span class="badge badge-blue">Feasibility</span></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Owner</div>
+                    <div class="detail-value">Mike Johnson (Innovation Team)</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Priority</div>
+                    <div class="detail-value"><span class="priority-high">High</span></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">SLA Status</div>
+                    <div class="detail-value">
+                        <div class="sla-indicator">
+                            <span class="sla-dot green"></span>
+                            <span>On Track (3 days remaining)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Target Date</div>
+                    <div class="detail-value">Q3 2026</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Funding</div>
+                    <div class="detail-value">€250,000 (Pending Approval)</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">JIRA Ticket</div>
+                    <div class="detail-value">INNO-2456</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Watchers</div>
+                    <div class="detail-value">John Doe, Lisa Wang, Emma Wilson, +3 more</div>
+                </div>
+                <div style="margin-top: 1.5rem; display: flex; gap: 0.5rem;">
+                    <button class="btn btn-primary">Edit Request</button>
+                    <button class="btn btn-outline">Add Comment</button>
+                    <button class="btn btn-outline">Watch</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // View Switching
+        function switchView(viewId) {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+
+            // Show selected view
+            document.getElementById(viewId).classList.add('active');
+
+            // Update nav
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Reinitialize charts if analytics view
+            if (viewId === 'analytics') {
+                setTimeout(() => {
+                    initMarketChart();
+                    initLeadTimeChart();
+                }, 100);
+            }
+        }
+
+        // Modal Functions
+        function showRequestDetail(requestId) {
+            document.getElementById('requestModal').classList.add('active');
+            document.getElementById('modalId').textContent = requestId;
+            // In a real app, fetch and populate request details here
+        }
+
+        function closeModal() {
+            document.getElementById('requestModal').classList.remove('active');
+        }
+
+        // Close modal on background click
+        document.getElementById('requestModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Form Submission
+        function submitRequest(event) {
+            event.preventDefault();
+            alert('Request submitted successfully! You will receive a confirmation email shortly.\n\nRequest ID: REQ-0268\nStatus: Intake\nAssigned to: Triage Team');
+            switchView('dashboard');
+        }
+
+        // Chart Initialization
+        function initStageChart() {
+            const ctx = document.getElementById('stageChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Intake', 'Feasibility', 'Funding', 'Approved', 'Roadmap', 'Delivered'],
+                    datasets: [{
+                        data: [23, 15, 12, 8, 34, 35],
+                        backgroundColor: [
+                            '#6c757d',
+                            '#0078d4',
+                            '#ffaa44',
+                            '#107c10',
+                            '#5c2d91',
+                            '#008272'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function initSLAChart() {
+            const ctx = document.getElementById('slaChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+                    datasets: [{
+                        label: 'SLA Compliance %',
+                        data: [88, 91, 89, 92, 94, 92],
+                        borderColor: '#0078d4',
+                        backgroundColor: 'rgba(0, 120, 212, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Target',
+                        data: [95, 95, 95, 95, 95, 95],
+                        borderColor: '#107c10',
+                        borderDash: [5, 5],
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 80,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function initMarketChart() {
+            const ctx = document.getElementById('marketChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Global', 'EMEA', 'APAC', 'NA', 'LATAM'],
+                    datasets: [{
+                        label: 'Active Requests',
+                        data: [34, 28, 25, 23, 17],
+                        backgroundColor: '#0078d4'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function initLeadTimeChart() {
+            const ctx = document.getElementById('leadTimeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Intake', 'Feasibility', 'Funding', 'Approved', 'Roadmap'],
+                    datasets: [{
+                        label: 'Avg. Days',
+                        data: [2.1, 5.3, 8.7, 1.8, 45.2],
+                        backgroundColor: [
+                            '#6c757d',
+                            '#0078d4',
+                            '#ffaa44',
+                            '#107c10',
+                            '#5c2d91'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Days'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize charts on load
+        window.addEventListener('load', function() {
+            initStageChart();
+            initSLAChart();
+        });
+    </script>
+</body>
+</html>
